@@ -19,10 +19,16 @@ const pool = mysql.createPool(pick(program, ['user', 'password', 'host', 'port']
 pool.query(tablesQuery()).then(result => {
 	for (let row of result[0]) {
 		let { Table, ...column } = row;
-		if (column.Pos == 1) db[row.Table] = [];
-		db[row.Table].push(column);
+		if (column.Pos == 1) db[Table] = [];
+		db[Table].push(column);
 	}
-	console.log(program.json ? JSON.stringify(db) : db);
+});
+
+pool.query(indexesQuery()).then(result => {
+	for (let row of result[0]) {
+		console.log(row);
+	}
+	//console.log(program.json ? JSON.stringify(db) : db);
 }).then(() => pool.end());
 
 function tablesQuery() {
@@ -38,6 +44,22 @@ function tablesQuery() {
 		WHERE table_schema='${program.database}' \
 		ORDER BY \
 		table_name, ordinal_position \
+	`;
+}
+
+function indexesQuery() {
+	return `SELECT table_name as 'Table', \
+		index_name, \
+		GROUP_CONCAT(column_name order by seq_in_index) as columns,
+		index_type, \
+		non_unique \
+		FROM information_schema.statistics \
+		WHERE table_schema='${program.database}' \
+		GROUP BY table_name, \
+        index_name, \
+        index_type, \
+        non_unique \
+		ORDER BY table_name \
 	`;
 }
 
