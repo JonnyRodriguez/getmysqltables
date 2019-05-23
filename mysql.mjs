@@ -6,32 +6,37 @@ module.exports = (config) => new Promise((resolve, reject) => {
 
 	pool.query(tablesQuery(config.database)).then(result => {
 		for (let row of result[0]) {
-			let { Table, ...column } = row;
-			if (column.Pos == 1) db[Table] = [];
-			db[Table].push(column);
+			let { table, ...column } = row;
+			if (column.pos == 1) db[table] = [];
+			db[table].push(column);
 		}
+	}).catch(err => {
+		if (pool) pool.end();
+		reject(err);
 	});
 
 	pool.query(indexesQuery(config.database)).then(result => {
 		for (let row of result[0]) {
-			let { Table, ...index } = row;
-			db[Table].push(index);
+			let { table, ...index } = row;
+			db[table].push(index);
 		}
-	}).then(() => {
 		pool.end();
 		resolve(db);
+	}).catch(err => {
+		if (pool) pool.end();
+		reject(err);
 	});
 
 });
 
 
 function tablesQuery(db) {
-	return `SELECT table_name as 'Table', \
-		column_name as 'Column', \
-		ordinal_position as 'Pos', \
-		column_type as 'Type', \
+	return `SELECT table_name as 'table', \
+		column_name as 'column', \
+		ordinal_position as 'pos', \
+		column_type as 'type', \
 		is_nullable, \
-		column_default as 'Default', \
+		column_default as 'default', \
 		extra \
 		FROM \
 		information_schema.columns \
@@ -42,10 +47,10 @@ function tablesQuery(db) {
 }
 
 function indexesQuery(db) {
-	return `SELECT table_name as 'Table', \
-		index_name, \
+	return `SELECT table_name as 'table', \
+		index_name as 'index', \
 		GROUP_CONCAT(column_name order by seq_in_index) as columns,
-		index_type, \
+		index_type as 'type', \
 		non_unique \
 		FROM information_schema.statistics \
 		WHERE table_schema='${db}' \

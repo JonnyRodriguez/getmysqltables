@@ -13,7 +13,8 @@ program
 	.option('-P, --port <port>', 'mysql port', '3306')
 	.parse(process.argv);
 
-const db = mysql(program).then( db => {
+const db = mysql(program).then(db => {
 	console.log(program.json ? JSON.stringify(db) : db);
-});
-
+}).catch(err => {
+	throw err;
+});;
