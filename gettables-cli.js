@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const program = require('commander');
-const mysql = require('./mysql');
+const mysql = require('./mysql.mjs');
 
 program
 	.version('0.1.0')
@@ -13,5 +13,7 @@ program
 	.option('-P, --port <port>', 'mysql port', '3306')
 	.parse(process.argv);
 
-const db = mysql(program.user,program.password,program.host,program.port,program.database);
+const db = mysql(program).then( db => {
+	console.log(program.json ? JSON.stringify(db) : db);
+});
 
